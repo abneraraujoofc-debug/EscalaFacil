@@ -44,7 +44,7 @@ else:
 
 encarregado = st.sidebar.text_input("Nome do Encarregado / Gerente:", value="João Silva")
 
-st.sidebar.hr()
+st.sidebar.divider()
 st.sidebar.header("📅 Período da Escala")
 
 ano_atual = datetime.now().year
@@ -55,7 +55,7 @@ ano_selecionado = st.sidebar.number_input("Ano:", min_value=2024, max_value=2030
 num_dias = calendar.monthrange(ano_selecionado, mes_selecionado)[1]
 dias_mes = [f"{dia:02d}/{mes_selecionado:02d}" for dia in range(1, num_dias + 1)]
 
-st.sidebar.hr()
+st.sidebar.divider()
 st.sidebar.subheader(f"👥 Colaboradores do Setor ({nome_setor})")
 lista_nomes = st.sidebar.text_area(
     "Nomes dos funcionários deste setor (um por linha):",
