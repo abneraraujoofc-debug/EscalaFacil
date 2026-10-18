@@ -1,66 +1,140 @@
 import streamlit as st
 import pandas as pd
 import random
+import calendar
+from datetime import datetime
 
-st.set_page_config(page_title="Gerador de Escala 5x2", page_icon="📅", layout="wide")
-
-st.title("📅 Gerador Automático de Escala 5x2")
-st.markdown("Crie escalas de trabalho de forma justa, rápida e sem complicação!")
-
-st.sidebar.header("⚙️ Configurações da Empresa")
-
-modo_operacao = st.sidebar.radio(
-    "Escolha o período de funcionamento da empresa:",
-    ["Segunda a Sábado (6 dias de operação)", "Segunda a Domingo (7 dias de operação)"]
+# Configuração da página
+st.set_page_config(
+    page_title="Escala Fácil 5x2 - Gestão por Setor", 
+    page_icon="🏢", 
+    layout="wide"
 )
 
-if "Sábado" in modo_operacao:
-    dias_semana = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"]
-else:
-    dias_semana = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]
+# Visual moderno
+st.markdown("""
+    <style>
+    .main-title { font-size: 28px; font-weight: bold; color: #1E293B; text-align: center; }
+    .sub-title { font-size: 14px; color: #64748B; text-align: center; margin-bottom: 20px; }
+    .sector-badge { 
+        background-color: #EFF6FF; 
+        color: #1D4ED8; 
+        padding: 8px 16px; 
+        border-radius: 8px; 
+        font-weight: bold; 
+        display: inline-block;
+        margin-bottom: 15px;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-st.sidebar.subheader("👥 Cadastro de Funcionários")
+st.markdown('<div class="main-title">🏢 Gestor de Escala Mensal por Setor</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-title">Crie e edite escalas organizadas para a sua área de trabalho</div>', unsafe_allow_html=True)
+
+# Painel Lateral - Informações da Empresa e Setor
+st.sidebar.header("🏬 Identificação do Setor")
+
+setores_padrao = ["Mercearia", "Friambria / Frios", "Açougue", "Padaria", "Frente de Caixa", "Hortifrúti", "Outro (Personalizado)"]
+setor_selecionado = st.sidebar.selectbox("Selecione o seu Setor / Área:", setores_padrao)
+
+if setor_selecionado == "Outro (Personalizado)":
+    nome_setor = st.sidebar.text_input("Digite o nome do seu setor:", value="Almoxarifado")
+else:
+    nome_setor = setor_selecionado
+
+encarregado = st.sidebar.text_input("Nome do Encarregado / Gerente:", value="João Silva")
+
+st.sidebar.hr()
+st.sidebar.header("📅 Período da Escala")
+
+ano_atual = datetime.now().year
+mes_selecionado = st.sidebar.selectbox("Mês:", list(range(1, 13)), index=datetime.now().month - 1)
+ano_selecionado = st.sidebar.number_input("Ano:", min_value=2024, max_value=2030, value=ano_atual)
+
+# Identificar dias do mês
+num_dias = calendar.monthrange(ano_selecionado, mes_selecionado)[1]
+dias_mes = [f"{dia:02d}/{mes_selecionado:02d}" for dia in range(1, num_dias + 1)]
+
+st.sidebar.hr()
+st.sidebar.subheader(f"👥 Colaboradores do Setor ({nome_setor})")
 lista_nomes = st.sidebar.text_area(
-    "Digite os nomes dos funcionários (um por linha):",
-    value="Ana\nBruno\nCarlos\nDiana\nEduardo\nFernanda\nGabriel"
+    "Nomes dos funcionários deste setor (um por linha):",
+    value="Carlos Eduardo\nMariana Santos\nLucas Ferreira\nFernanda Lima",
+    height=140
 )
 
 funcionarios = [nome.strip() for nome in lista_nomes.split("\n") if nome.strip()]
 
-if st.button("🚀 Gerar Escala 5x2", type="primary"):
-    if len(funcionarios) < 2:
-        st.error("Por favor, adicione pelo menos 2 funcionários para gerar a escala.")
-    else:
-        escala_resultado = {func: [] for func in funcionarios}
-        
-        for func in funcionarios:
-            folgas = random.sample(dias_semana, 2)
-            for dia in dias_semana:
-                if dia in folgas:
-                    escala_resultado[func].append("FOLGA 😴")
-                else:
-                    escala_resultado[func].append("TRABALHA 💼")
-        
-        df_escala = pd.DataFrame(escala_resultado, index=dias_semana).T
-        
-        st.success(f"Escala gerada com sucesso para modo: **{modo_operacao}**!")
-        
-        st.subheader("📋 Tabela da Escala Semanal")
-        st.dataframe(df_escala, use_container_width=True)
-        
-        st.subheader("📊 Visão Diária da Equipe")
-        cols = st.columns(len(dias_semana))
-        for idx, dia in enumerate(dias_semana):
-            with cols[idx]:
-                trabalham = df_escala[df_escala[dia] == "TRABALHA 💼"].index.tolist()
-                folgam = df_escala[df_escala[dia] == "FOLGA 😴"].index.tolist()
-                st.metric(label=dia, value=f"{len(trabalham)} em serviço")
-                st.caption(f"**Folgam:** {', '.join(folgam) if folgam else 'Ninguém'}")
+# Destaque do Setor na Tela
+st.markdown(f'<div class="sector-badge">📍 Setor: {nome_setor.upper()} | Encarregado(a): {encarregado}</div>', unsafe_allow_html=True)
 
-        csv = df_escala.to_csv().encode('utf-8')
-        st.download_button(
-            label="📥 Baixar Escala (CSV / Excel)",
-            data=csv,
-            file_name="escala_trabalho_5x2.csv",
-            mime="text/csv"
-        )
+# Botão de Geração
+if st.button("⚡ Gerar Escala do Setor", type="primary"):
+    if len(funcionarios) < 1:
+        st.error("⚠️ Cadastre pelo menos 1 colaborador para gerar a escala.")
+    else:
+        dados = {}
+        for func in funcionarios:
+            escala_func = []
+            for dia in range(1, num_dias + 1):
+                if dia % 7 in [0, 6]: 
+                    escala_func.append("FOLGA")
+                else:
+                    escala_func.append("TRABALHA")
+            random.shuffle(escala_func)
+            dados[func] = escala_func
+            
+        df_base = pd.DataFrame(dados, index=dias_mes).T
+        st.session_state['df_escala'] = df_base
+        st.session_state['setor_atual'] = nome_setor
+        st.success(f"Escala de {nome_setor} gerada com sucesso para {mes_selecionado}/{ano_selecionado} ({num_dias} dias)!")
+
+# Área de Edição e Visualização
+if 'df_escala' in st.session_state:
+    st.subheader(f"✏️ Tabela de Escala Mensal - {st.session_state.get('setor_atual', nome_setor)}")
+    st.info("💡 **Edição livre:** Você pode clicar em qualquer célula abaixo para alterar de 'TRABALHA' para 'FOLGA' ou ajustar conforme a necessidade da sua equipe!")
+    
+    # Tabela Editável
+    df_editado = st.data_editor(
+        st.session_state['df_escala'],
+        use_container_width=True,
+        num_rows="fixed"
+    )
+    
+    # Resumo de Totais
+    st.subheader("📊 Totais de Dias Trabalhados e Folgas")
+    totais = []
+    for func in df_editado.index:
+        linha = df_editado.loc[func]
+        trabalhos = (linha == "TRABALHA").sum()
+        folgas = (linha == "FOLGA").sum()
+        totais.append({
+            "Setor": nome_setor,
+            "Colaborador": func, 
+            "Dias Trabalhados": trabalhos, 
+            "Total de Folgas": folgas
+        })
+    
+    df_totais = pd.DataFrame(totais)
+    st.dataframe(df_totais, use_container_width=True)
+
+    # Resumo Formatado para WhatsApp do Setor
+    st.subheader("📲 Resumo do Setor para o WhatsApp")
+    texto_whats = f"*ESCALA MENSAL - SETOR {nome_setor.upper()}*\n"
+    texto_whats += f"Encarregado: {encarregado} | Mês: {mes_selecionado}/{ano_selecionado}\n\n"
+    for func in df_editado.index:
+        linha = df_editado.loc[func]
+        dias_folga = [dia for dia in linha.index if linha[dia] == "FOLGA"]
+        texto_whats += f"👤 *{func}:* Folgas nos dias -> {', '.join(dias_folga)}\n"
+        
+    st.code(texto_whats, language="markdown")
+
+    # Exportar
+    st.subheader("📥 Exportar Relatório do Setor")
+    csv = df_editado.to_csv().encode('utf-8')
+    st.download_button(
+        label=f"📄 Baixar Escala ({nome_setor}) em Excel/CSV",
+        data=csv,
+        file_name=f"escala_{nome_setor.lower().replace(' ', '_')}_{mes_selecionado}_{ano_selecionado}.csv",
+        mime="text/csv"
+    )
